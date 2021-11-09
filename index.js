@@ -17,28 +17,55 @@ console.log(uri);
 async function run() {
     try {
         await client.connect();
-        const database = client.db("doctors_portal");
-        const appointmentsCollection = database.collection('appointments');
+        const database = client.db("doctors_portal_data");
+        const appointmentsCollection = database.collection('appointments_data');
+        const usersCollection = database.collection('users_data');
 
         app.get('/appointments', async (req, res) => {
             const email = req.query.email;
             const date = new Date(req.query.date).toLocaleDateString();
-            // console.log(date);
             const query = { email: email, date: date }
             const cursor = appointmentsCollection.find(query);
             const appointments = await cursor.toArray();
-            console.log(appointments);
             res.send(appointments);
 
         })
         app.post('/appointments', async (req, res) => {
             const appointment = req.body;
             const result = await appointmentsCollection.insertOne(appointment);
-            console.log(result);
+
             // res.json(result)
             res.send(result);
 
         })
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            //console.log(result);
+            res.send(result);
+
+        })
+
+
+        app.put('/users', async (req, res) => {
+            const user = req.body;
+            const filter = { email: user.email };
+            const options = { upsert: true };
+            const update = { $set: user };
+            const result = await usersCollection.updateOne(filter, update, options);
+            console.log(result);
+            res.json(result);
+        });
+        app.put('/users/admin', async (req, res) => {
+            const user = req.body;
+            console.log('makeAdmin', user);
+            const filter = { email: user.email };
+            const update = { $set: { role: 'admin' } };
+            const result = await usersCollection.updateOne(filter, update);
+            console.log(result);
+            res.json(result);
+        });
 
 
     }
@@ -47,6 +74,8 @@ async function run() {
     }
 
 }
+
+
 
 run().catch(console.dir);
 
